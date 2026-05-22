@@ -1,0 +1,51 @@
+name: Build Push and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t cloud-native-project-app:v2 ./app
+
+      - name: Tag Docker Image
+        run: |
+          docker tag cloud-native-project-app:v2 395516497310.dkr.ecr.ap-south-1.amazonaws.com/cloud-native-project-app:v2
+
+      - name: Push Docker Image
+        run: |
+          docker push 395516497310.dkr.ecr.ap-south-1.amazonaws.com/cloud-native-project-app:v2
+
+      - name: Update Kubernetes Manifest
+        run: |
+          sed -i 's|image:.*|image: 395516497310.dkr.ecr.ap-south-1.amazonaws.com/cloud-native-project-app:v2|' k8s/deployment.yaml
+
+      - name: Commit and Push Manifest
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add k8s/deployment.yaml
+          git commit -m "Updated deployment manifest" || echo "No changes to commit"
+
+          git push

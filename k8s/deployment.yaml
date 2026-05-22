@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: cloud-native-app
-        image: 395516497310.dkr.ecr.ap-south-1.amazonaws.com/cloud-native-project-app:v1
+        image: 395516497310.dkr.ecr.ap-south-1.amazonaws.com/cloud-native-project-app:v2
 
         ports:
         - containerPort: 80
